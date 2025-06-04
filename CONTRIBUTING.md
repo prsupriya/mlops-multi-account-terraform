@@ -1,59 +1,69 @@
-# Contributing Guidelines
+# Contributing
 
-Thank you for your interest in contributing to our project. Whether it's a bug report, new feature, correction, or additional
-documentation, we greatly value feedback and contributions from our community.
+## Set up your dev env
 
-Please read through this document before submitting any issues or pull requests to ensure we have all the necessary
-information to effectively respond to your bug report or contribution.
+* install virtualenv and virtualenvwrapper globally
+* do anything you want to your .zshrc for virtualenv (readthedocs)
+* create a virtualenv using the latest stable python.
+* enable the virtual env
+* install the package deps in dependencies
 
+on ubuntu 18.04, it's all something like this
+```
+❯ pip3 install virtualenv 
 
-## Reporting Bugs/Feature Requests
+❯ pip3 install virtualenvwrapper
 
-We welcome you to use the GitHub issue tracker to report bugs or suggest features.
+# this is for when you need to make the virtualenv
+❯ mkvirtualenv -p /usr/bin/python3.8 your-project
 
-When filing an issue, please check existing open, or recently closed, issues to make sure somebody else hasn't already
-reported the issue. Please try to include as much information as you can. Details like these are incredibly useful:
+# or, if the virtualenv is already there and you want to use it
+❯ workon your-project
 
-* A reproducible test case or series of steps
-* The version of our code being used
-* Any modifications you've made relevant to the bug
-* Anything unusual about your environment or deployment
+# now that we're in our virtualenv, use the virtualenv pip to install the required packages
+❯ pip install .
 
+# but wait! we want to be able to run tests, so go ahead and install the test dependencies too
+❯ pip install .[test]
+```
 
-## Contributing via Pull Requests
-Contributions via pull requests are much appreciated. Before sending us a pull request, please ensure that:
+so after this, your virtualenv is ready to do all the fun stuff in a safe way
 
-1. You are working against the latest source on the *main* branch.
-2. You check existing open, and recently merged, pull requests to make sure someone else hasn't addressed the problem already.
-3. You open an issue to discuss any significant work - we would hate for your time to be wasted.
+## Running basic script
 
-To send us a pull request, please:
+let's execute the command line script to get a pipeline definition from one of the pipeline scripts in the project.
 
-1. Fork the repository.
-2. Modify the source; please focus on the specific change you are contributing. If you also reformat all the code, it will be hard for us to focus on your change.
-3. Ensure local tests pass.
-4. Commit to your fork using clear commit messages.
-5. Send us a pull request, answering any default questions in the pull request interface.
-6. Pay attention to any automated CI failures reported in the pull request, and stay involved in the conversation.
+```
+❯ workon your-project
 
-GitHub provides additional document on [forking a repository](https://help.github.com/articles/fork-a-repo/) and
-[creating a pull request](https://help.github.com/articles/creating-a-pull-request/).
+❯ get-pipeline-definition --help
+usage: Gets the pipeline definition for the pipeline script. [-h] [-n MODULE_NAME] [-kwargs KWARGS]
 
+optional arguments:
+  -h, --help            show this help message and exit
+  -n MODULE_NAME, --module-name MODULE_NAME
+                        The module name of the pipeline to import.
+  -kwargs KWARGS, --kwargs KWARGS
+                        Dict string of keyword arguments for the pipeline generation (if supported)
+```
 
-## Finding contributions to work on
-Looking at the existing issues is a great way to find something to contribute on. As our projects, by default, use the default GitHub issue labels (enhancement/bug/duplicate/help wanted/invalid/question/wontfix), looking at any 'help wanted' issues is a great place to start.
+## Running tests
 
+start up your virtualenv again and let's get to testing
 
-## Code of Conduct
-This project has adopted the [Amazon Open Source Code of Conduct](https://aws.github.io/code-of-conduct).
-For more information see the [Code of Conduct FAQ](https://aws.github.io/code-of-conduct-faq) or contact
-opensource-codeofconduct@amazon.com with any additional questions or comments.
+```
+❯ workon your-project
 
+❯ python -m pytest   
+============================================================= test session starts =============================================================
+cachedir: .pytest_cache
+plugins: cov-2.10.1
+collected 2 items                                                                                                                               
 
-## Security issue notifications
-If you discover a potential security issue in this project we ask that you notify AWS/Amazon Security via our [vulnerability reporting page](http://aws.amazon.com/security/vulnerability-reporting/). Please do **not** create a public github issue.
+tests/test_pipelines.py::test_that_you_wrote_tests XFAIL                                                                           [ 50%]
+tests/test_pipelines.py::test_pipelines_importable PASSED                                                                          [100%]
 
+======================================================== 1 passed, 1 xfailed in 0.04s =========================================================
+```
 
-## Licensing
-
-See the [LICENSE](LICENSE) file for our project's licensing. We will ask you to confirm the licensing of your contribution.
+w00t! there you go. have fun developing!

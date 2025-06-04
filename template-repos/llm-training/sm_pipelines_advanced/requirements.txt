@@ -1,3 +1,0 @@
-sagemaker==2.218.0
-s3fs
-fmeval

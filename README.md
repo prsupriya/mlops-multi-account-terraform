@@ -1,182 +1,140 @@
-# Build an enterprise grade MLOps platfrom on AWS using Github and Terraform
+## Layout of the SageMaker Project Template
 
-## Introduction
+The template provides a starting point for bringing your SageMaker Pipeline development to production.
 
-As enterprise businesses embrace Machine Learning (ML) across their organisations, manual workflows for building, training, and deploying ML models tend to become bottlenecks to innovation. To overcome this, enterprises need to shape a clear operating model defining how multiple personas, such as Data Scientists, Data Engineers, ML Engineers, IT, and Business stakeholders, should collaborate and interact, how to separate the concerns, responsibilities and skills, and how to leverage AWS services optimally. This combination of ML and Operations, so-called MLOps, is helping companies streamline their end-to-end ML lifecycle and boost productivity of data scientists while maintaining high model accuracy and enhancing security and compliance.
-
-## High level architecture
-
-In this repository, we show how to use **Terraform** with **GitHub and GitHub Actions** to build a baseline infrastructure for secure MLOps. The solution can be broken down into three parts:
-
-**Base Infrastructure**
-
-The necessary infrastructure components for your accounts including SageMaker Studio, Networking, Permissions and SSM Parameters.
-
-<img src="./architecture/base-infra.png" alt="drawing" width="500"/>
-
-**Shared Template Repositories**
-
-GitHub template repositories that are cloned when a custom SageMaker Project is deployed by a Data Scientist or ML Engineer.
-
-<img src="./architecture/template-repos.png" alt="drawing" width="500"/>
-
-**User Experience**
-
-This is how the end-users (Data Scientists or ML Engineers) use SageMaker projects.
-
-Typically, when a SageMaker project is deployed:
-- GitHub private repos are created from templates that Data Scientists need to customize as per their use-case.
-- These variables show best practices such as testing, approvals, and dashboards. They can be fully customized once deployed.
-- Depending on the chosen SageMaker project, other project specific resources might also be created such as a dedicated S3 bucket for the project and automation to trigger ML deployment from model registry.
-
-An architecture for the `Building, training, and deployment` project is shown below.
-
-<img src="./architecture/user-exp.png" alt="drawing" width="700"/>
-
-Currently, four example project template are available.
-
-1. **MLOps Template for Model Building, Training, and Deployment**: ML Ops pattern to train models using SageMaker pipelines and to deploy the trained model into preproduction and production accounts. This template supports Real-time inference, Batch Inference Pipeline, and BYOC containers.
-
-2. **MLOps Template for promoting the full ML pipeline across environments**: ML Ops pattern to shows how to take the same SageMaker pipeline across environments from dev to prod.
-
-3. **MLOps Template for Model Building and Training**: MLOps pattern that shows a simple one-account SageMaker Pipeline setup.
-
-4. **MLOps Template for LLM Model Building, Training and Evaluation**: MLOps pattern that shows a simple one-account SageMaker Pipeline setup for LLM models.
-
-Based on the selected project and its setting, SageMaker projects clones GitHub repos using templates. It also sets the secrets, environment variables, and deployment environments.
-
-<img src="./architecture/project-list.png" alt="drawing" width="700"/>
-
-## Prerequisites
-
-The instructions here assume the following prerequisites. Make a note of these details to use in following sections.
-
-1. AWS Account(s) with sufficient permissions to deploy base infrastructure. We recommended using at least three AWS accounts for a Dev, Preprod, and Prod environment for one business-unit. However, you can deploy the infrastructure using one account for testing purposes.
-2. A GitHub Organization.
-3. Personal Access Token (PAT) for GitHub organization. It is recommended to create a service/platform account and use it's PAT.
-
-
-## How to use:
-
-### Bootstrap you AWS Accounts
-
-This section explains the steps required to bootstrap your accounts for GitHub and Terraform.
-
-> **_NOTE:_** You can skip directly to [CloudFormation template](#option-1-cloudformation-template-for-bootstrapping) section to avoid manual bootstrapping.  
-> **_NOTE:_** You can skip directly to [Bash Script](#option-2-bash-script-for-bootstrapping) section to avoid manual bootstrapping.
-
-
-#### GitHub Actions using OpenId Connect
-
-To avoid using long-term [AWS Identity and Access Management (IAM)](https://aws.amazon.com/iam/) user access keys, we can configure an [OpenID Connect (OIDC)](https://openid.net/connect/) identity provider (idP) inside an AWS account which allows the use of IAM roles and short-term credentials. Follow detailed instructions at [Use IAM roles to connect GitHub Actions to actions in AWS](https://aws.amazon.com/blogs/security/use-iam-roles-to-connect-github-actions-to-actions-in-aws/) or use the CloudFormation template provided below.
-
-#### Terraform S3 and DynamoDB Backend
-
-Terraform backend supports [Amazon S3 and DynamoDB](https://developer.hashicorp.com/terraform/language/settings/backends/s3) for storing states and locking consistency checking.
-
-Create the following resources in each AWS account or use the CloudFormation template provided below.
-1. S3 Bucket: `${Prefix}-${Environment}-${AWS::Region}-${AWS::AccountId}`
-2. DynamoDB Table: `${Prefix}-${Environment}`
-
-Where,
-`Prefix`: Common name for resources. e.g. `mlops`
-`Environment`: dev or preprod or prod
-
-#### (Option 1) CloudFormation Template for bootstrapping
-
-A [bootstrap.yaml](bootstrap.yaml) CloudFormation template has been provided. This can be deployed to each AWS account. Later, bootstrapping can be standardised and automated via [CloudFormation StackSets](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/what-is-cfnstacksets.html) for an [AWS Organization](https://docs.aws.amazon.com/organizations/latest/userguide/services-that-can-integrate-cloudformation.html).
-
-You can get started with one account but we recommend creating at least 3 AWS accounts: a dev, preprod, and prod account.
-
-Deploy the provided `bootstrap.yaml` CloudFormation template in your account(s) either using the AWS console or using AWS CLI as shown below, from the root of the repo.
-
-1. Ensure AWS CLI is [installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and [credentials are loaded](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) for the target account that you want to bootstrap.
-
-2. Identify the following:
-  a. Environment Type of the account: `dev`, `preprod`, or `prod`
-  b. Name of your GitHub Organization
-  c. (Optional) Customize S3 bucket name for Terraform state files by choosing a prefix.
-  d. (Optional) Customize DynamoDB Table Name for State Locking.
-
-3. Run the following command updating the details from step 2.
-
-```bash
-# Update
-export ENV=xxx
-export GITHUB_ORG=xxx
-# Optional
-export TerraformStateBucketPrefix=terraform-state
-export TerraformStateLockTableName=terraform-state-locks
-
-aws cloudformation create-stack \
-  --stack-name YourStackName \
-  --template-body file://bootstrap.yaml \
-  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
-  --parameters ParameterKey=Environment,ParameterValue=$ENV \
-               ParameterKey=GitHubOrg,ParameterValue=$GITHUB_ORG \
-               ParameterKey=OIDCProviderArn,ParameterValue="" \
-               ParameterKey=TerraformStateBucketPrefix,ParameterValue=$TerraformStateBucketPrefix \
-               ParameterKey=TerraformStateLockTableName,ParameterValue=$TerraformStateLockTableName
+```
+├── build_deployment_configs.py
+├── CONTRIBUTING.md
+├── deploy_stack.py
+├── endpoint-config-template.tf
+├── img
+│   └── pipeline-full.png
+├── LICENSE
+├── pipelines
+│   ├── abalone
+│   │   ├── evaluate.py
+│   │   ├── __init__.py
+│   │   ├── pipeline.py
+│   │   └── preprocess.py
+│   ├── get_pipeline_definition.py
+│   ├── __init__.py
+│   ├── run_pipeline.py
+│   ├── _utils.py
+│   └── __version__.py
+├── prod-config.json
+├── README.md
+├── sagemaker-pipelines-project.ipynb
+├── setup.cfg
+├── setup.py
+├── staging-config.json
+├── tests
+│   ├── test_endpoints.py
+│   └── test_pipelines.py
+└── tox.ini
 ```
 
-#### (Option 2) Bash script for bootstrapping
+## Start here
+This is a sample code repository that demonstrates how you can organize your code for an ML business solution. This code repository is created as part of creating a Project in SageMaker. 
 
-A [bootstrap.sh](bootstrap.sh) script has been provided. This can be run against each AWS account. 
+In this example, we are solving the abalone age prediction problem using the abalone dataset (see below for more on the dataset). The following section provides an overview of how the code is organized and what you need to modify. In particular, `pipelines/pipelines.py` contains the core of the business logic for this problem. It has the code to express the ML steps involved in generating an ML model. You will also find the code for that supports preprocessing and evaluation steps in `preprocess.py` and `evaluate.py` files respectively.
 
-You can get started with one account but we recommend creating at least 3 AWS accounts: a dev, preprod, and prod account.
+Once you understand the code structure described below, you can inspect the code and you can start customizing it for your own business case. This is only sample code, and you own this repository for your business use case. Please go ahead, modify the files, commit them and see the changes kick off the SageMaker pipelines in the CICD system.
 
-1. Ensure AWS CLI is [installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and [credentials are loaded](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) for the target account that you want to bootstrap.
+You can also use the `sagemaker-pipelines-project.ipynb` notebook to experiment from SageMaker Studio before you are ready to checkin your code.
 
-2. Identify the following:
-  a. Environment Type of the account: `dev`, `preprod`, or `prod`
-  b. Name of your GitHub Organization
-  c. (Optional) Customize S3 bucket name for Terraform state files by choosing a prefix.
-  d. (Optional) Customize DynamoDB Table Name for State Locking.
+A description of some of the artifacts is provided below:
+<br/><br/>
+Your codebuild execution instructions. This file contains the instructions needed to kick off an execution of the SageMaker Pipeline in the CICD system (via CodePipeline). You will see that this file has the fields definined for naming the Pipeline, ModelPackageGroup etc. You can customize them as required.
 
-3. Run the script (`bash ./bootstrap.sh`) and input the details from step 2 when prompted. You can leave most of these options default.
+```
+.github/workflows/build.tf
+```
 
-> **_NOTE:_** if you change the TerraformStateBucketPrefix or TerraformStateLockTableName parameters, you must update the environment variables (`S3_PREFIX`, `DYNAMODB_PREFIX`) in the [deploy.yml](base-infrastructure/.github/workflows/deploy.yml) to match.
-
-This one-time deployment creates the following resources in your AWS account:
-
-- For Terraform Backend:
-  - S3 Bucket to store state files.
-  -  DynamoDB table to store state locking.
-- AWS Identity provider for GitHub actions using OIDC (as explained above)
-- IAM Role to assume from GitHub Actions using the identity provider.
-
-Once this is deployed, you're ready to move on to the next step.
-
-### Set up repositories in you GitHub Organization
-
-We will move the code from this example to your GitHub Organization.
-
-1. [base-infrastructure](./base-infrastructure/): An internal repository for Base Infrastructure which wil contain all code from `./sagemaker-mlops-terraform` folder.
-2. [template-repos](./template-repos/): GitHub [template repositories](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-template-repository) with code from `./template-repos/**`. Make sure to use the same name as the folder name.
-
-> **_Note_:** This is an important step to be able to deploy infrastructure. All further steps should be performed directly in your GitHub Organization.
+<br/><br/>
+Your pipeline artifacts, which includes a pipeline module defining the required `get_pipeline` method that returns an instance of a SageMaker pipeline, a preprocessing script that is used in feature engineering, and a model evaluation script to measure the Mean Squared Error of the model that's trained by the pipeline. This is the core business logic, and if you want to create your own folder, you can do so, and implement the `get_pipeline` interface as illustrated here.
 
 
-## You are now ready!
+```
+|-- pipelines
+|   |-- abalone
+|   |   |-- evaluate.py
+|   |   |-- __init__.py
+|   |   |-- pipeline.py
+|   |   `-- preprocess.py
 
-Follow the [instructions in the base-infra repository](./base-infrastructure/README.md) to deploy MLOps infrastructure to your bootstrapped AWS accounts.
+```
+<br/><br/>
+Utility modules for getting pipeline definition jsons and running pipelines (you do not typically need to modify these):
 
-## Contacts
+```
+|-- pipelines
+|   |-- get_pipeline_definition.py
+|   |-- __init__.py
+|   |-- run_pipeline.py
+|   |-- _utils.py
+|   `-- __version__.py
+```
+<br/><br/>
+Python package artifacts:
+```
+|-- setup.cfg
+|-- setup.py
+```
+<br/><br/>
+A stubbed testing module for testing your pipeline as you develop:
+```
+|-- tests
+|   `-- test_pipelines.py
+```
+<br/><br/>
+The `tox` testing framework configuration:
+```
+tox.ini
+```
 
-If you have any comments or questions, please contact:
+## Deploy your model
 
-The team who created the repo:
+This is a sample code repository for demonstrating how you can organize your code for deploying an realtime inference Endpoint infrastructure. This code repository is created as part of creating a Project in SageMaker. 
 
-- Jordan Grubb <jmgrubb@amazon.co.uk> 
-- Anirudh Gangwal <angangwa@amazon.co.uk>
-- Irene Arroyo Delgado <iiarroyo@amazon.es>
+This code repository has the code to find the latest approved ModelPackage for the associated ModelPackageGroup and automaticaly deploy it to the Endpoint on detecting a change (`build.py`). This code repository also defines the CloudFormation template which defines the Endpoints as infrastructure. It also has configuration files associated with `staging` and `prod` stages. 
 
-## AWS MLOps accelerators
+Upon triggering a deployment, the CodePipeline pipeline will deploy 2 Endpoints - `staging` and `prod`. After the first deployment is completed, the CodePipeline waits for a manual approval step for promotion to the prod stage.
 
-- Terraform and GitHub solution: https://github.com/aws-samples/mlops-multi-account-terraform
-- AWS CDK solution: https://github.com/aws-samples/aws-enterprise-mlops-framework
-- CloudFormation Solution: https://github.com/aws-samples/amazon-sagemaker-secure-mlops 
-- SageMaker Projects Examples: https://github.com/aws-samples/sagemaker-custom-project-templates
-  
+You own this code and you can modify this template to change as you need it, add additional tests for your custom validation. 
+
+A description of some of the artifacts is provided below:
+The GitHub Actions workflow to build and deploy Endpoints.
+
+```
+.github/workflows/deploy.tf
+```
+
+```
+build.py
+```
+ - this python file contains code to get the latest approve package arn and exports staging and configuration files. This is invoked from the Build stage.
+
+`endpoint-config-template.tf`
+ - this CloudFormation template file is packaged by the build step in the CodePipeline and is deployed in different stages.
+
+`staging-config.json`
+ - this configuration file is used to customize `staging` stage in the pipeline. You can configure the instance type, instance count here.
+
+`prod-config.json`
+ - this configuration file is used to customize `prod` stage in the pipeline. You can configure the instance type, instance count here.
+
+`test\test.py`
+  - this python file contains code to describe and invoke the staging endpoint. You can customize to add more tests here.
 
 
+## Dataset for the Example Abalone Pipeline
+
+The dataset used is the [UCI Machine Learning Abalone Dataset](https://archive.ics.uci.edu/ml/datasets/abalone) [1]. The aim for this task is to determine the age of an abalone (a kind of shellfish) from its physical measurements. At the core, it's a regression problem. 
+ 
+The dataset contains several features - length (longest shell measurement), diameter (diameter perpendicular to length), height (height with meat in the shell), whole_weight (weight of whole abalone), shucked_weight (weight of meat), viscera_weight (gut weight after bleeding), shell_weight (weight after being dried), sex ('M', 'F', 'I' where 'I' is Infant), as well as rings (integer).
+
+The number of rings turns out to be a good approximation for age (age is rings + 1.5). However, to obtain this number requires cutting the shell through the cone, staining the section, and counting the number of rings through a microscope -- a time-consuming task. However, the other physical measurements are easier to determine. We use the dataset to build a predictive model of the variable rings through these other physical measurements.
+
+We'll upload the data to a bucket we own. But first we gather some constants we can use later throughout the notebook.
+
+[1] Dua, D. and Graff, C. (2019). [UCI Machine Learning Repository](http://archive.ics.uci.edu/ml). Irvine, CA: University of California, School of Information and Computer Science.
