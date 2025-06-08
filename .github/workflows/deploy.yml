@@ -43,7 +43,7 @@ jobs:
         with:
           name: config-files
           path: |
-            endpoint-config-template.tf
+            endpoint-config-template.yml
             deploy_stack.py
             *-export.json
 

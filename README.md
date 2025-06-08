@@ -6,7 +6,7 @@ The template provides a starting point for bringing your SageMaker Pipeline deve
 ├── build_deployment_configs.py
 ├── CONTRIBUTING.md
 ├── deploy_stack.py
-├── endpoint-config-template.tf
+├── endpoint-config-template.yml
 ├── img
 │   └── pipeline-full.png
 ├── LICENSE
@@ -47,7 +47,7 @@ A description of some of the artifacts is provided below:
 Your codebuild execution instructions. This file contains the instructions needed to kick off an execution of the SageMaker Pipeline in the CICD system (via CodePipeline). You will see that this file has the fields definined for naming the Pipeline, ModelPackageGroup etc. You can customize them as required.
 
 ```
-.github/workflows/build.tf
+.github/workflows/build.yml
 ```
 
 <br/><br/>
@@ -106,7 +106,7 @@ A description of some of the artifacts is provided below:
 The GitHub Actions workflow to build and deploy Endpoints.
 
 ```
-.github/workflows/deploy.tf
+.github/workflows/deploy.yml
 ```
 
 ```
@@ -114,7 +114,7 @@ build.py
 ```
  - this python file contains code to get the latest approve package arn and exports staging and configuration files. This is invoked from the Build stage.
 
-`endpoint-config-template.tf`
+`endpoint-config-template.yml`
  - this CloudFormation template file is packaged by the build step in the CodePipeline and is deployed in different stages.
 
 `staging-config.json`

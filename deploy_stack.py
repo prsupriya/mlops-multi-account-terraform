@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parameters, tags = read_parameters(args.param_file)
 
     # Read Cfn template body
-    with open("endpoint-config-template.tf", "r") as f:
+    with open("endpoint-config-template.yml", "r") as f:
         template_body = f.read()
 
     try:
