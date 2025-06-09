@@ -5,6 +5,7 @@ on:
       - main
     paths:
       - pipelines/**
+  workflow_dispatch:
 env:
   AWS_REGION: us-east-1
   SAGEMAKER_PROJECT_NAME: SWill-proj10
