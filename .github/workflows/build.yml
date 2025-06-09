@@ -7,7 +7,7 @@ on:
       - pipelines/**
 env:
   AWS_REGION: us-east-1
-  SAGEMAKER_PROJECT_NAME: SWill-pro9
+  SAGEMAKER_PROJECT_NAME: SWill-proj10
 
 jobs:
   Build:
