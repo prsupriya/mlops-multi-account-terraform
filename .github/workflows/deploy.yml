@@ -5,6 +5,11 @@ on: workflow_dispatch
 env:
   AWS_REGION: us-east-1
   SAGEMAKER_PROJECT_NAME: SWill-proj10
+  TARGET_STAGING_ACCOUNT_ID: ${{ secrets.TARGET_STAGING_ACCOUNT_ID }}
+  TARGET_STAGING_ROLE_ARN: ${{ secrets.TARGET_STAGING_ROLE_ARN }}
+  TARGET_PROD_ACCOUNT_ID: ${{ secrets.TARGET_PROD_ACCOUNT_ID }}
+  TARGET_PROD_ROLE_ARN: ${{ secrets.TARGET_PROD_ROLE_ARN }}
+
   EXPORT_TEMPLATE_STAGING_CONFIG: "staging-config-export.json"
   EXPORT_TEMPLATE_PROD_CONFIG: "prod-config-export.json"
 

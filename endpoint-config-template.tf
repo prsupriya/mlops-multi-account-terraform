@@ -42,8 +42,34 @@ variable "EndpointInstanceType" {
   description = "The ML compute instance type for the endpoint."
 }
 
+variable "TargetAccountId" {
+  type        = string
+  description = "AWS Account ID where the endpoint will be deployed"
+}
+
+variable "TargetAccountRoleArn" {
+  type        = string
+  description = "IAM Role ARN in the target account that allows cross-account deployment"
+}
+
+variable "TargetRegion" {
+  type        = string
+  description = "AWS Region where the endpoint will be deployed"
+  default     = "us-east-1"
+}
+
+provider "aws" {
+  alias  = "target_account"
+  region = var.TargetRegion
+  
+  assume_role {
+    role_arn = var.TargetAccountRoleArn
+  }
+}
+
 # Resources
 resource "aws_sagemaker_model" "model" {
+  provider            = aws.target_account
   name               = "${var.SageMakerProjectName}-model"
   execution_role_arn = var.ModelExecutionRoleArn
 
@@ -53,6 +79,7 @@ resource "aws_sagemaker_model" "model" {
 }
 
 resource "aws_sagemaker_endpoint_configuration" "endpoint_config" {
+  provider = aws.target_account
   production_variants {
     variant_name           = "AllTraffic"
     model_name             = aws_sagemaker_model.model.name
@@ -63,6 +90,7 @@ resource "aws_sagemaker_endpoint_configuration" "endpoint_config" {
 }
 
 resource "aws_sagemaker_endpoint" "endpoint" {
+  provider              = aws.target_account
   name                 = "${var.SageMakerProjectName}-${var.StageName}"
   endpoint_config_name = aws_sagemaker_endpoint_configuration.endpoint_config.name
 }

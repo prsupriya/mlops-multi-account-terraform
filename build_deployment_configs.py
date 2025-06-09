@@ -82,6 +82,18 @@ def extend_config(
         raise Exception("Configuration file must include SageName parameter")
     if not "Tags" in stage_config:
         stage_config["Tags"] = {}
+
+    stage_name = stage_config["Parameters"]["StageName"]
+    if stage_name.lower() == "staging":
+        target_account_id = os.environ.get("TARGET_STAGING_ACCOUNT_ID")
+        target_role_arn = os.environ.get("TARGET_STAGING_ROLE_ARN")
+    elif stage_name.lower() == "prod":
+        target_account_id = os.environ.get("TARGET_PROD_ACCOUNT_ID")
+        target_role_arn = os.environ.get("TARGET_PROD_ROLE_ARN")
+    
+    if target_account_id and target_role_arn:
+        new_params["TargetAccountId"] = target_account_id
+        new_params["TargetAccountRoleArn"] = target_role_arn
     # Create new params and tags
     new_params = {
         "SageMakerProjectName": args.sagemaker_project_name,
