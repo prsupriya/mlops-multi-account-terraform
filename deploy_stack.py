@@ -61,53 +61,23 @@ if __name__ == "__main__":
     # Read parameters and tags
     parameters, tags = read_parameters(args.param_file)
 
-    # # Read Cfn template body
-    # with open("endpoint-config-template.yml", "r") as f:
-    #     template_body = f.read()
+    # Read Cfn template body
+    with open("endpoint-config-template.yml", "r") as f:
+        template_body = f.read()
 
-    # try:
-    #     cfn_client.create_stack(
-    #         StackName=stack_name,
-    #         TemplateBody=template_body,
-    #         Parameters=parameters,
-    #         Tags=tags,
-    #     )
-    #     logging.info("Creating a new stack...")
-    # except cfn_client.exceptions.AlreadyExistsException:
-    #     cfn_client.update_stack(
-    #         StackName=stack_name,
-    #         TemplateBody=template_body,
-    #         Parameters=parameters,
-    #         Tags=tags,
-    #     )
-    #     logging.info("Updating existing stack...")
-
-    # Create a Terraform variables file from parameters
-    tf_vars = {}
-    for param in parameters:
-        tf_vars[param["ParameterKey"]] = param["ParameterValue"]
-    
-    # Write Terraform variables to a file
-    with open("terraform.tfvars.json", "w") as f:
-        json.dump(tf_vars, f, indent=2)
-    
-    # Use Terraform instead of CloudFormation
-    import subprocess
-    import os
-    
-    # Initialize Terraform with the specific template file
-    logging.info("Initializing Terraform...")
-    subprocess.run(["terraform", "init"], check=True)
-    
-    # Apply Terraform configuration explicitly using the template file
-    logging.info(f"Applying Terraform configuration for {stack_name}...")
     try:
-        subprocess.run([
-            "terraform", "apply", 
-            "-auto-approve", 
-            "-var-file=terraform.tfvars.json",
-            "-config=endpoint-config-template.tf"
-        ], check=True)
-        logging.info("Terraform apply completed successfully")
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Terraform apply failed: {e}")
+        cfn_client.create_stack(
+            StackName=stack_name,
+            TemplateBody=template_body,
+            Parameters=parameters,
+            Tags=tags,
+        )
+        logging.info("Creating a new stack...")
+    except cfn_client.exceptions.AlreadyExistsException:
+        cfn_client.update_stack(
+            StackName=stack_name,
+            TemplateBody=template_body,
+            Parameters=parameters,
+            Tags=tags,
+        )
+        logging.info("Updating existing stack...")
