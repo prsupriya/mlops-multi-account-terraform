@@ -83,6 +83,13 @@ def extend_config(
     if not "Tags" in stage_config:
         stage_config["Tags"] = {}
 
+    # Create new params and tags
+    new_params = {
+        "SageMakerProjectName": args.sagemaker_project_name,
+        "ModelPackageName": model_package_arn,
+        "ModelExecutionRoleArn": model_execution_role,
+    }
+
     stage_name = stage_config["Parameters"]["StageName"]
     if stage_name.lower() == "staging":
         target_account_id = os.environ.get("TARGET_STAGING_ACCOUNT_ID")
@@ -94,12 +101,7 @@ def extend_config(
     if target_account_id and target_role_arn:
         new_params["TargetAccountId"] = target_account_id
         new_params["TargetAccountRoleArn"] = target_role_arn
-    # Create new params and tags
-    new_params = {
-        "SageMakerProjectName": args.sagemaker_project_name,
-        "ModelPackageName": model_package_arn,
-        "ModelExecutionRoleArn": model_execution_role,
-    }
+    
     new_tags = {
         "sagemaker:deployment-stage": stage_config["Parameters"]["StageName"],
         "sagemaker:project-id": project_id,
