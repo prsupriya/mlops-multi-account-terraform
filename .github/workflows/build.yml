@@ -1,4 +1,4 @@
-name: BuildSageMakerModelN
+name: BuildSageMakerModel
 on:
   push:
     branches:
