@@ -27,6 +27,12 @@ Parameters:
   EndpointInstanceType:
     Type: String
     Description: The ML compute instance type for the endpoint.
+  TargetAccountId:
+      Type: String
+      Description: AWS Account ID where the endpoint will be deployed
+  TargetAccountRoleArn:
+    Type: String
+    Description: IAM Role ARN in the target account that allows cross-account deployment
 
 Resources:
   Model:
